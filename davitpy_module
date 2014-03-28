@@ -6,6 +6,7 @@
 # First let's import the environment variable: HOME
 eval set  [ array get env HOME ]
 
+system "mkdir $HOME/davittmp"
 # Set an alias for python, needed on Centos 5.x systems which come wiht python 2.4 by default
 set-alias		python		python2.6	
 
