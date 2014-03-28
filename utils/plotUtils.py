@@ -134,7 +134,8 @@ class mapObj(basemap.Basemap):
         for ix,iy,ip in zip(x,y,parallels):
           if not self.xmin <= ix <= self.xmax: continue
           if not self.ymin <= iy <= self.ymax: continue
-          _ = text(ix, iy, r"{:3.0f}$^\circ$".format(ip), 
+          ipstr=r"%3.0f$^\circ$" % (ip)
+          _ = text(ix, iy, ipstr, 
               rotation=rotate_label, va='center', ha='center', zorder=10, color='.4')
       # label meridians on bottom and left
       meridians = np.arange(-180.,181.,20.)
