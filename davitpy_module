@@ -13,6 +13,7 @@ set-alias		python		python2.6
 # Set the davitpy specific variables.
 setenv	 		DAVITPY		/usr/local/davitpy/
 setenv			DAVIT_TMPDIR	$HOME/davittmp/
+setenv 			DAVIT_LOCALDIR	"/raid/SuperDARN/data/"
 setenv			DAVIT_DIRFORMAT '%(dirtree)s/%(ftype)s/%(year)s/%(month)s.%(day)s/'
 prepend-path		PYTHONPATH      /usr/local/davitpy/
 prepend-path		PATH      	/usr/local/davitpy/bin
