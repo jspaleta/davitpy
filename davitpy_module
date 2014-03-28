@@ -6,14 +6,14 @@
 # First let's import the environment variable: HOME
 eval set  [ array get env HOME ]
 
-system "mkdir $HOME/davittmp"
 # Set an alias for python, needed on Centos 5.x systems which come wiht python 2.4 by default
 set-alias		python		python2.6	
 
 # Set the davitpy specific variables.
 setenv	 		DAVITPY		/usr/local/davitpy/
 setenv			DAVIT_TMPDIR	$HOME/davittmp/
-setenv 			DAVIT_LOCALDIR	"/raid/SuperDARN/data/"
-setenv			DAVIT_DIRFORMAT '%(dirtree)s/%(ftype)s/%(year)s/%(month)s.%(day)s/'
+setenv			DAVIT_DIRFORMAT %(dirtree)s/%(ftype)s/%(year)s/%(month)s.%(day)s/
 prepend-path		PYTHONPATH      /usr/local/davitpy/
 prepend-path		PATH      	/usr/local/davitpy/bin
+
+system "mkdir $HOME/davittmp"
