@@ -168,7 +168,7 @@ def radDataOpen(sTime,radcode,eTime=None,channel=None,bmnum=None,cp=None, \
   #Next, check for a cached file
   if fileName == None and not noCache:
     try:
-      if filtered:
+      if True:
         for f in glob.glob("%s????????.??????.????????.??????.%s.%sf" % (tmpDir,radcode,fileType)):
           try:
             ff = string.replace(f,tmpDir,'')
