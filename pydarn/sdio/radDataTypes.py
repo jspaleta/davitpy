@@ -314,6 +314,7 @@ class prmData(radBaseData):
     * **rsep**  (int): range gate separation in km
     * **xcf**  (int): xcf flag
     * **tfreq**  (int): transmit freq in kHz
+    * **txpl**  (int): transmit pulse length in us 
     * **ifmode**  (int): if mode flag
     * **ptab**  (mppul length list): pulse table
     * **ltab**  (mplgs x 2 length list): lag table
@@ -344,6 +345,7 @@ class prmData(radBaseData):
     self.rsep = None        #range gate separation in km
     self.xcf = None         #xcf flag
     self.tfreq = None       #transmit freq in kHz
+    self.txpl = None       #transmit freq in kHz
     self.ifmode = None      #if mode flag
     self.ptab = None        #pulse table
     self.ltab = None        #lag table
