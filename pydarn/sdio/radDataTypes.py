@@ -278,6 +278,7 @@ class beamData(radBaseData):
     self.rawacf = rawData(parent=self)
     self.prm = prmData()
     self.iqdat = iqData()
+    self.recordDict = {"ick":0} 
     self.fType = None
     
     #if we are intializing from an object, do that
@@ -287,10 +288,10 @@ class beamData(radBaseData):
     import datetime as dt
     myStr = 'Beam record FROM: '+str(self.time)+'\n'
     for key,var in self.__dict__.iteritems():
-      if not isinstance(var,radBaseData):
-        myStr += key+' = '+str(var)+'\n'
-      else:
+      if isinstance(var,radBaseData) or isinstance(var,type({})):
         myStr += '%s = %s \n' % (key,'object')
+      else:
+        myStr += key+' = '+str(var)+'\n'
     return myStr
     
 class prmData(radBaseData):

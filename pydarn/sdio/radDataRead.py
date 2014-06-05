@@ -458,6 +458,7 @@ def radDataReadRec(myPtr):
         (myPtr.cp == None or myPtr.cp == dfile['cp'])):
       #fill the beamdata object
       myBeam.updateValsFromDict(dfile)
+      myBeam.recordDict=dfile
       myBeam.fType = myPtr.fType
       #file prm object
       myBeam.prm.updateValsFromDict(dfile)
