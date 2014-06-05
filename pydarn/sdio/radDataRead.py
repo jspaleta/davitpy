@@ -458,14 +458,17 @@ def radDataReadRec(myPtr):
         (myPtr.cp == None or myPtr.cp == dfile['cp'])):
       #fill the beamdata object
       myBeam.updateValsFromDict(dfile)
-      myBeam.fit.updateValsFromDict(dfile)
-      myBeam.prm.updateValsFromDict(dfile)
-      myBeam.rawacf.updateValsFromDict(dfile)
-      myBeam.iqdat.updateValsFromDict(dfile)
       myBeam.fType = myPtr.fType
-      if(myPtr.fType == 'fitacf' or myPtr.fType == 'fitex' or myPtr.fType == 'lmfit'):
-        if myBeam.fit.slist == None: 
-          myBeam.fit.slist = []
+      #file prm object
+      myBeam.prm.updateValsFromDict(dfile)
+      if myBeam.fType == "rawacf":
+          myBeam.rawacf.updateValsFromDict(dfile)
+      if myBeam.fType == "iqdat":
+          myBeam.iqdat.updateValsFromDict(dfile)
+      if(myBeam.fType == 'fitacf' or myBeam.fType == 'fitex' or myBeam.fType == 'lmfit'):
+          myBeam.fit.updateValsFromDict(dfile)
+          if myBeam.fit.slist == None: 
+              myBeam.fit.slist = []
       return myBeam
       
 def radDataReadScan(myPtr):
