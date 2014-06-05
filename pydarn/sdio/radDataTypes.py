@@ -430,6 +430,7 @@ class rawData(radBaseData):
   """a class to contain the rawacf data from a radar beam sounding, extends :class:`pydarn.sdio.radDataTypes.radBaseData`
   
   **Attrs**:
+    * **pwr0** (nrang length list): acf lag0 pwr 
     * **acfd** (nrang x mplgs x 2 length list): acf data
     * **xcfd** (nrang x mplgs x 2 length list): xcf data
   
@@ -443,6 +444,7 @@ class rawData(radBaseData):
 
   #initialize the struct
   def __init__(self, rawDict=None, parent=None):
+    self.pwr0 = []      #acf data
     self.acfd = []      #acf data
     self.xcfd = []      #xcf data
     self.parent = parent #reference to parent beam
