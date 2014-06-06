@@ -375,7 +375,8 @@ def radDataOpen(sTime,radcode,eTime=None,channel=None,bmnum=None,cp=None, \
 
     #filter(if desired) and open the file
     if(not filtered): 
-      myPtr.ptr = open(tmpName,'r')
+      myPtr.fd = os.open(tmpName,os.O_RDONLY)
+      myPtr.ptr = os.fdopen(myPtr.fd)
     else:
       if not fileType+'f' in tmpName:
         try:
@@ -388,7 +389,8 @@ def radDataOpen(sTime,radcode,eTime=None,channel=None,bmnum=None,cp=None, \
       else:
         fTmpName = tmpName
       try:
-        myPtr.ptr = open(fTmpName,'r')
+        myPtr.fd = os.open(fTmpName,os.O_RDONLY)
+        myPtr.ptr = os.fdopen(myPtr.fd)
       except Exception,e:
         print 'problem opening file'
         print e
@@ -439,7 +441,8 @@ def radDataReadRec(myPtr):
   #do this until we reach the requested start time
   #and have a parameter match
   while(1):
-    dfile = pydarn.dmapio.readDmapRec(myPtr.ptr)
+    offset=pydarn.dmapio.getDmapOffset(myPtr.fd)
+    dfile = pydarn.dmapio.readDmapRec(myPtr.fd)
     #check for valid data
     if dfile == None or dt.datetime.utcfromtimestamp(dfile['time']) > myPtr.eTime:
       #if we dont have valid data, clean up, get out
@@ -460,6 +463,8 @@ def radDataReadRec(myPtr):
       myBeam.updateValsFromDict(dfile)
       myBeam.recordDict=dfile
       myBeam.fType = myPtr.fType
+      myBeam.fPtr = myPtr
+      myBeam.offset = offset 
       #file prm object
       myBeam.prm.updateValsFromDict(dfile)
       if myBeam.fType == "rawacf":
@@ -522,7 +527,8 @@ def radDataReadScan(myPtr):
   #and have a parameter match
   while(1):
       #read the next record from the dmap file
-    dfile = pydarn.dmapio.readDmapRec(myPtr.ptr)
+    offset=pydarn.dmapio.getDmapOffset(myPtr.fd)
+    dfile = pydarn.dmapio.readDmapRec(myPtr.fd)
     #check for valid data
     if(dfile == None or dt.datetime.utcfromtimestamp(dfile['time']) > myPtr.eTime):
       #if we dont have valid data, clean up, get out
@@ -546,6 +552,8 @@ def radDataReadScan(myPtr):
       myBeam.rawacf.updateValsFromDict(dfile)
       myBeam.iqdat.updateValsFromDict(dfile)
       myBeam.fType = myPtr.fType
+      myBeam.fPtr = myPtr
+      myBeam.offset = offset 
       if(myPtr.fType == 'fitacf' or myPtr.fType == 'fitex' or myPtr.fType == 'lmfit'):
         if(myBeam.fit.slist == None): 
           myBeam.fit.slist = []
@@ -603,7 +611,8 @@ def radDataReadAll(myPtr):
   #and have a parameter match
   while(1):
       #read the next record from the dmap file
-    dfile = pydarn.dmapio.readDmapRec(myPtr.ptr)
+    offset=pydarn.dmapio.getDmapOffset(myPtr.fd)
+    dfile = pydarn.dmapio.readDmapRec(myPtr.fd)
     #check for valid data
     if(dfile == None or dt.datetime.utcfromtimestamp(dfile['time']) > myPtr.eTime):
       #if we dont have valid data, clean up, get out
@@ -627,6 +636,8 @@ def radDataReadAll(myPtr):
       myBeam.rawacf.updateValsFromDict(dfile)
       myBeam.iqdat.updateValsFromDict(dfile)
       myBeam.fType = myPtr.fType
+      myBeam.fPtr = myPtr
+      myBeam.offset = offset 
       if(myPtr.fType == 'fitacf' or myPtr.fType == 'fitex' or myPtr.fType == 'lmfit'):
         if(myBeam.fit.slist == None): myBeam.fit.slist = []
       if(myBeam.prm.scan == 0 or firstflg):

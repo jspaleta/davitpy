@@ -53,7 +53,8 @@ class sdDataPtr():
     self.eTime = eTime
     self.hemi = hemi
     self.fType = None
-    
+    self.fd = None 
+  
   def __repr__(self):
     myStr = 'sdDataPtr\n'
     for key,var in self.__dict__.iteritems():
@@ -356,3 +357,4 @@ class sdModel(sdBaseData):
     self.boundarymlon = None
 
     if(dataDict != None): self.updateValsFromDict(dataDict)
+

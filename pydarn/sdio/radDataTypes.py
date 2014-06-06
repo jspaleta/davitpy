@@ -280,7 +280,8 @@ class beamData(radBaseData):
     self.iqdat = iqData()
     self.recordDict = {"ick":0} 
     self.fType = None
-    
+    self.offset = None
+    self.fPtr = None 
     #if we are intializing from an object, do that
     if(beamDict != None): self.updateValsFromDict(beamDict)
     

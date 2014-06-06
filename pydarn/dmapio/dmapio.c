@@ -421,12 +421,50 @@ write_fit_rec(PyObject *self, PyObject *args)
     return myObj;
   }
 }
+static PyObject *
+get_dmap_offset(PyObject *self, PyObject *args)
+{
+  int fd;
+  long offset;
+  FILE* fp=NULL;
+  if(!PyArg_ParseTuple(args, "i", &fd))
+    return NULL;
+  else
+  {
+    PyObject *recordOffset = NULL;
+    fp = fdopen(fd,"r");
+    offset=ftell(fp);
+    recordOffset=PyInt_FromLong(offset);
+    return recordOffset;
+  }  
+}
+static PyObject *
+set_dmap_offset(PyObject *self, PyObject *args)
+{
+  int fd;
+  long offset,noffset;
+  FILE* fp=NULL;
+  if(!PyArg_ParseTuple(args, "il", &fd,&offset))
+    return NULL;
+  else
+  {
+    PyObject *recordOffset = NULL;
+    fp = fdopen(fd,"r");
+    fseek(fp,offset,SEEK_SET);
+    noffset=ftell(fp);
+    if (noffset==offset) {
+      Py_RETURN_TRUE;
+    } else {
+      Py_RETURN_FALSE;
+    }
+  }  
+}
 
 static PyObject *
 read_dmap_rec(PyObject *self, PyObject *args)
 {
-  PyObject* f;
-  if(!PyArg_ParseTuple(args, "O", &f))
+  int fd;
+  if(!PyArg_ParseTuple(args, "i", &fd))
     return NULL;
   else
   {
@@ -436,13 +474,9 @@ read_dmap_rec(PyObject *self, PyObject *args)
     struct DataMap *ptr;
     struct DataMapScalar *s;
     struct DataMapArray *a;
-    FILE * fp = PyFile_AsFile(f);
-    
     nrang=0;
     Py_BEGIN_ALLOW_THREADS
-    PyFile_IncUseCount((PyFileObject *)f);
-    ptr = DataMapRead(fileno(fp));
-    PyFile_DecUseCount((PyFileObject *)f);
+    ptr = DataMapRead(fd);
     Py_END_ALLOW_THREADS
     
     if(ptr == NULL)
@@ -630,6 +664,8 @@ read_dmap_rec(PyObject *self, PyObject *args)
 static PyMethodDef dmapioMethods[] = 
 {
   {"readDmapRec",  read_dmap_rec, METH_VARARGS, "read a dmap record"},
+  {"getDmapOffset",  get_dmap_offset, METH_VARARGS, "get current dmap file offset"},
+  {"setDmapOffset",  set_dmap_offset, METH_VARARGS, "set dmap file offset"},
   {"writeFitRec",  write_fit_rec, METH_VARARGS, "write a fitacf record"},
   {NULL, NULL, 0, NULL}        /* Sentinel */
 };
