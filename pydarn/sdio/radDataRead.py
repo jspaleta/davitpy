@@ -29,6 +29,7 @@
   * :func:`pydarn.sdio.radDataRead.radDataReadRec`
   * :func:`pydarn.sdio.radDataRead.radDataReadScan`
   * :func:`pydarn.sdio.radDataRead.radDataReadAll`
+  * :func:`pydarn.sdio.radDataRead.radDataCreateIndex`
 """
 
 def radDataOpen(sTime,radcode,eTime=None,channel=None,bmnum=None,cp=None, \
@@ -563,6 +564,45 @@ def radDataReadScan(myPtr):
       else:
         myPtr.fBeam = myBeam
         return myScan
+def radDataCreateIndex(myPtr):
+  """A function to index radar data into dict from a :class:`pydarn.sdio.radDataTypes.radDataPtr` object
+  
+  .. note::
+    to use this, you must first create a :class:`pydarn.sdio.radDataTypes.radDataPtr` object with :func:`radDataOpen`
+
+  **Args**:
+    * **myPtr** (:class:`pydarn.sdio.radDataTypes.radDataPtr`): contains the pipeline to the data we are after
+  **Returns**:
+    * **myIndex** (dict): keys are record timedate objects and values are byte offsets into the file. 
+    
+  **Example**:
+    ::
+    
+      import datetime as dt
+      myPtr = radDataOpen(dt.datetime(2011,1,1),'bks',eTime=dt.datetime(2011,1,1,2),channel='a', bmnum=7,cp=153,fileType='fitex',filtered=False, src=None):
+      myIndex = radDataCreateIndex(myPtr)
+    
+  Written by JDS 20140606
+  """
+  import pydarn, datetime as dt
+  indexDict={}
+  starting_offset=pydarn.dmapio.getDmapOffset(myPtr.fd)
+  #reset back to start of file
+  pydarn.dmapio.setDmapOffset(myPtr.fd,0)
+  while(1):
+      #read the next record from the dmap file
+    offset=pydarn.dmapio.getDmapOffset(myPtr.fd)
+    dfile = pydarn.dmapio.readDmapRec(myPtr.fd)
+    if(dfile is None):
+      #if we dont have valid data, clean up, get out
+      print '\nreached end of data'
+      break
+    rectime = dt.datetime.utcfromtimestamp(dfile['time'])
+    indexDict[rectime]=offset
+  #reset back to before building the index 
+  pydarn.dmapio.setDmapOffset(myPtr.fd,starting_offset)
+  myPtr.indexDict=indexDict
+  return indexDict
 
 def radDataReadAll(myPtr):
   """A function to read a large amount (to the end of the request) of radar data into a list from a :class:`pydarn.sdio.radDataTypes.radDataPtr` object

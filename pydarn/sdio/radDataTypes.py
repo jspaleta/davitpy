@@ -67,6 +67,7 @@ class radDataPtr():
     self.fType = None
     self.fBeam = None
     self.fd = None
+    self.indexDict = None
 
   def close(self):
     import os
