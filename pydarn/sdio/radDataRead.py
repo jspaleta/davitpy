@@ -447,7 +447,7 @@ def radDataReadRec(myPtr):
     if dfile == None or dt.datetime.utcfromtimestamp(dfile['time']) > myPtr.eTime:
       #if we dont have valid data, clean up, get out
       print '\nreached end of data'
-      myPtr.ptr.close()
+      myPtr.close()
       return None
     #check that we're in the time window, and that we have a 
     #match for the desired params
@@ -533,7 +533,7 @@ def radDataReadScan(myPtr):
     if(dfile == None or dt.datetime.utcfromtimestamp(dfile['time']) > myPtr.eTime):
       #if we dont have valid data, clean up, get out
       print '\nreached end of data'
-      myPtr.ptr.close()
+      myPtr.close()
       return None
     #check that we're in the time window, and that we have a 
     #match for the desired params
@@ -617,7 +617,7 @@ def radDataReadAll(myPtr):
     if(dfile == None or dt.datetime.utcfromtimestamp(dfile['time']) > myPtr.eTime):
       #if we dont have valid data, clean up, get out
       print '\nreached end of data'
-      myPtr.ptr.close()
+      myPtr.close()
       return None
     #check that we're in the time window, and that we have a 
     #match for the desired params

@@ -66,12 +66,22 @@ class radDataPtr():
     self.cp = cp
     self.fType = None
     self.fBeam = None
-    
+    self.fd = None
+
+  def close(self):
+    import os
+    if self.ptr is not None:
+      self.ptr.close()
+      self.fd=None
+
   def __repr__(self):
     myStr = 'radDataPtr\n'
     for key,var in self.__dict__.iteritems():
       myStr += key+' = '+str(var)+'\n'
     return myStr
+
+  def __del__(self):
+    self.close() 
 
 class radBaseData():
   """a base class for the radar data types.  This allows for single definition of common routines
