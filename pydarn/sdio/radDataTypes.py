@@ -43,6 +43,7 @@ class radDataPtr():
   
   **Attrs**:
     * **ptr** (file or mongodb query object): the data pointer (different depending on mongodo or dmap)
+    * **fd** (int): the file descriptor 
     * **sTime** (`datetime <http://tinyurl.com/bl352yx>`_): start time of the request
     * **eTime** (`datetime <http://tinyurl.com/bl352yx>`_): end time of the request
     * **stid** (int): station id of the request
@@ -51,13 +52,19 @@ class radDataPtr():
     * **cp** (int): control prog id of the request
     * **fType** (str): the file type, 'fitacf', 'rawacf', 'iqdat', 'fitex', 'lmfit'
     * **fBeam** (:class:`pydarn.sdio.radDataTypes.beamData`): the first beam of the next scan, useful for when reading into scan objects
+    * **recordIndex** (dict): look up dictionary for file offsets for all records 
+    * **scanStartIndex** (dict): look up dictionary for file offsets for scan start records
   **Methods**:
-    * Nothing.
+    * **open** 
+    * **close** 
+    * **seek** 
+    * **readRec** 
+    * **readScan** 
     
   Written by AJ 20130108
   """
-  def __init__(self,ptr=None,sTime=None,eTime=None,stid=None,channel=None,bmnum=None,cp=None):
-    self.ptr = ptr
+  def __init__(self,sTime=None,eTime=None,stid=None,channel=None,bmnum=None,cp=None):
+    self.ptr =  None
     self.sTime = sTime
     self.eTime = eTime
     self.stid = stid
@@ -67,9 +74,128 @@ class radDataPtr():
     self.fType = None
     self.fBeam = None
     self.fd = None
-    self.indexDict = None
+    self.recordIndex = None
+    self.scanStartIndex = None
+
+  def open(self,filename):
+    """open a dmap file by filename."""
+    pass
+
+  def seek(self,time=None,exact=True,scanstart=False):
+      """jump to dmap record nearest to requested time. 
+         If keyword exact is set, then only seek to matching requested time.
+         If keyword scanstart is set, find nearest start of scan record.
+      """
+
+      try:
+        offset=self.recordIndex[time]
+      except:
+        return False
+
+      return pydarn.dmapio.setDmapOffset(self.fd,offset)
+
+  def reset(self):
+      """jump to beginning of dmap file."""
+      return pydarn.dmapio.setDmapOffset(self.fd,0)
+
+  def readScan(self):
+      """A function to read a full scan of data from a :class:`pydarn.sdio.radDataTypes.radDataPtr` object
+  
+      .. note::
+        This will ignore any bmnum request.  Also, if no channel was specified in radDataOpen, it will only read channel 'a'
+
+      **Returns**:
+        * **myScan** (:class:`pydarn.sdio.radDataTypes.scanData`): an object filled with the data we are after.  *will return None when finished reading*
+    
+      """
+      from pydarn.sdio import scanData
+
+      if self.ptr.closed:
+          print 'error, your file pointer is closed'
+          return None
+      if self.channel == None: tmpchn = 'a'
+      else: tmpchn = self.channel
+
+      myScan = scanData()
+      if self.fBeam != None:
+          myScan.append(self.fBeam)
+          firstflg = False
+      else:
+          firstflg = True
+      if self.channel == None: tmpchn = 'a'
+      else: tmpchn = self.channel
+
+      while(1):
+        myBeam=self.readRec(allbeams=True)
+        if myBeam is None: return myScan
+
+        if(myBeam.prm.scan == 0 or firstflg):
+          myScan.append(myBeam)
+          firstflg = False
+        else:
+          self.fBeam = myBeam
+          return myScan
+
+
+
+  def readRec(self,allbeams=False):
+     """A function to read a single record of radar data from a :class:`pydarn.sdio.radDataTypes.radDataPtr` object
+     **Returns**:
+     * **myBeam** (:class:`pydarn.sdio.radDataTypes.beamData`): an object filled with the data we are after.  *will return None when finished reading*
+     """
+     from pydarn.sdio.radDataTypes import radDataPtr, beamData, \
+     fitData, prmData, rawData, iqData, alpha
+     import pydarn, datetime as dt
+
+     #check input
+     if(self.ptr == None):
+         print 'error, your pointer does not point to any data'
+         return None
+     if self.ptr.closed:
+         print 'error, your file pointer is closed'
+         return None
+     myBeam = beamData()
+     #do this until we reach the requested start time
+     #and have a parameter match
+     while(1):
+         offset=pydarn.dmapio.getDmapOffset(self.fd)
+         dfile = pydarn.dmapio.readDmapRec(self.fd)
+         #check for valid data
+         if dfile == None or dt.datetime.utcfromtimestamp(dfile['time']) > self.eTime:
+             #if we dont have valid data, clean up, get out
+             print '\nreached end of data'
+             #self.close()
+             return None
+         #check that we're in the time window, and that we have a 
+         #match for the desired params
+         if dfile['channel'] < 2: channel = 'a'
+         else: channel = alpha[dfile['channel']-1]
+         if(dt.datetime.utcfromtimestamp(dfile['time']) >= self.sTime and \
+               dt.datetime.utcfromtimestamp(dfile['time']) <= self.eTime and \
+               (self.stid == None or dfile['stid'] == 0 or self.stid == dfile['stid']) and
+               (self.channel == None or self.channel == channel) and
+               (self.bmnum == None or self.bmnum == dfile['bmnum'] or allbeams ) and
+               (self.cp == None or self.cp == dfile['cp'])):
+             #fill the beamdata object
+             myBeam.updateValsFromDict(dfile)
+             myBeam.recordDict=dfile
+             myBeam.fType = self.fType
+             myBeam.fPtr = self
+             myBeam.offset = offset
+             #file prm object
+             myBeam.prm.updateValsFromDict(dfile)
+             if myBeam.fType == "rawacf":
+                 myBeam.rawacf.updateValsFromDict(dfile)
+             if myBeam.fType == "iqdat":
+                 myBeam.iqdat.updateValsFromDict(dfile)
+             if(myBeam.fType == 'fitacf' or myBeam.fType == 'fitex' or myBeam.fType == 'lmfit'):
+                 myBeam.fit.updateValsFromDict(dfile)
+             if myBeam.fit.slist == None:
+                 myBeam.fit.slist = []
+             return myBeam
 
   def close(self):
+    """close associated dmap file."""
     import os
     if self.ptr is not None:
       self.ptr.close()
@@ -78,7 +204,10 @@ class radDataPtr():
   def __repr__(self):
     myStr = 'radDataPtr\n'
     for key,var in self.__dict__.iteritems():
-      myStr += key+' = '+str(var)+'\n'
+      if isinstance(var,radBaseData) or isinstance(var,radDataPtr) or  isinstance(var,type({})):
+        myStr += '%s = %s \n' % (key,'object')
+      else:
+        myStr += '%s = %s \n' % (key,var)
     return myStr
 
   def __del__(self):
@@ -289,7 +418,7 @@ class beamData(radBaseData):
     self.rawacf = rawData(parent=self)
     self.prm = prmData()
     self.iqdat = iqData()
-    self.recordDict = {"ick":0} 
+    self.recordDict = None 
     self.fType = None
     self.offset = None
     self.fPtr = None 
@@ -300,10 +429,10 @@ class beamData(radBaseData):
     import datetime as dt
     myStr = 'Beam record FROM: '+str(self.time)+'\n'
     for key,var in self.__dict__.iteritems():
-      if isinstance(var,radBaseData) or isinstance(var,type({})):
-        myStr += '%s = %s \n' % (key,'object')
+      if isinstance(var,radBaseData) or isinstance(var,radDataPtr) or isinstance(var,type({})):
+        myStr += '%s  = %s \n' % (key,'object')
       else:
-        myStr += key+' = '+str(var)+'\n'
+        myStr += '%s  = %s \n' % (key,var)
     return myStr
     
 class prmData(radBaseData):
@@ -373,7 +502,7 @@ class prmData(radBaseData):
     import datetime as dt
     myStr = 'Prm data: \n'
     for key,var in self.__dict__.iteritems():
-      myStr += key+' = '+str(var)+'\n'
+      myStr += '%s  = %s \n' % (key,var)
     return myStr
 
 class fitData(radBaseData):
@@ -436,7 +565,7 @@ class fitData(radBaseData):
     import datetime as dt
     myStr = 'Fit data: \n'
     for key,var in self.__dict__.iteritems():
-      myStr += key+' = '+str(var)+'\n'
+      myStr += '%s = %s \n' % (key,var)
     return myStr
 
 class rawData(radBaseData):
@@ -468,7 +597,7 @@ class rawData(radBaseData):
     import datetime as dt
     myStr = 'Raw data: \n'
     for key,var in self.__dict__.iteritems():
-      myStr += key+' = '+str(var)+'\n'
+      myStr += '%s = %s \n' % (key,var)
     return myStr
 
 class iqData(radBaseData):
@@ -524,5 +653,5 @@ class iqData(radBaseData):
     import datetime as dt
     myStr = 'IQ data: \n'
     for key,var in self.__dict__.iteritems():
-      myStr += key+' = '+str(var)+'\n'
+      myStr += '%s = %s \n' % (key,var)
     return myStr

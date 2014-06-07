@@ -423,60 +423,11 @@ def radDataReadRec(myPtr):
     
   Written by AJ 20130110
   """
-
-  from pydarn.sdio.radDataTypes import radDataPtr, beamData, \
-    fitData, prmData, rawData, iqData, alpha
-  import pydarn, datetime as dt
-  
-  #check input
+  from pydarn.sdio import radDataPtr
   assert(isinstance(myPtr,radDataPtr)),\
     'error, input must be of type radDataPtr'
-  if(myPtr.ptr == None):
-    print 'error, your pointer does not point to any data'
-    return None
-  if myPtr.ptr.closed:
-    print 'error, your file pointer is closed'
-    return None
-  myBeam = beamData()
-  
-  #do this until we reach the requested start time
-  #and have a parameter match
-  while(1):
-    offset=pydarn.dmapio.getDmapOffset(myPtr.fd)
-    dfile = pydarn.dmapio.readDmapRec(myPtr.fd)
-    #check for valid data
-    if dfile == None or dt.datetime.utcfromtimestamp(dfile['time']) > myPtr.eTime:
-      #if we dont have valid data, clean up, get out
-      print '\nreached end of data'
-      myPtr.close()
-      return None
-    #check that we're in the time window, and that we have a 
-    #match for the desired params
-    if dfile['channel'] < 2: channel = 'a'
-    else: channel = alpha[dfile['channel']-1]
-    if(dt.datetime.utcfromtimestamp(dfile['time']) >= myPtr.sTime and \
-        dt.datetime.utcfromtimestamp(dfile['time']) <= myPtr.eTime and \
-        (myPtr.stid == None or dfile['stid'] == 0 or myPtr.stid == dfile['stid']) and
-        (myPtr.channel == None or myPtr.channel == channel) and
-        (myPtr.bmnum == None or myPtr.bmnum == dfile['bmnum']) and
-        (myPtr.cp == None or myPtr.cp == dfile['cp'])):
-      #fill the beamdata object
-      myBeam.updateValsFromDict(dfile)
-      myBeam.recordDict=dfile
-      myBeam.fType = myPtr.fType
-      myBeam.fPtr = myPtr
-      myBeam.offset = offset 
-      #file prm object
-      myBeam.prm.updateValsFromDict(dfile)
-      if myBeam.fType == "rawacf":
-          myBeam.rawacf.updateValsFromDict(dfile)
-      if myBeam.fType == "iqdat":
-          myBeam.iqdat.updateValsFromDict(dfile)
-      if(myBeam.fType == 'fitacf' or myBeam.fType == 'fitex' or myBeam.fType == 'lmfit'):
-          myBeam.fit.updateValsFromDict(dfile)
-          if myBeam.fit.slist == None: 
-              myBeam.fit.slist = []
-      return myBeam
+
+  return myPtr.readRec() 
       
 def radDataReadScan(myPtr):
   """A function to read a full scan of data from a :class:`pydarn.sdio.radDataTypes.radDataPtr` object
@@ -508,62 +459,8 @@ def radDataReadScan(myPtr):
   #check input
   assert(isinstance(myPtr,radDataPtr)),\
     'error, input must be of type radDataPtr'
-  if(myPtr.ptr == None):
-    print 'error, your pointer does not point to any data'
-    return None
-  if myPtr.ptr.closed:
-    print 'error, your file pointer is closed'
-    return None
-  
-  myScan = scanData()
-  if myPtr.fBeam != None: 
-     myScan.append(myPtr.fBeam)
-     firstflg = False
-  else: 
-     firstflg = True
-  if myPtr.channel == None: tmpchn = 'a'
-  else: tmpchn = myPtr.channel
-  
-  #do this until we reach the requested start time
-  #and have a parameter match
-  while(1):
-      #read the next record from the dmap file
-    offset=pydarn.dmapio.getDmapOffset(myPtr.fd)
-    dfile = pydarn.dmapio.readDmapRec(myPtr.fd)
-    #check for valid data
-    if(dfile == None or dt.datetime.utcfromtimestamp(dfile['time']) > myPtr.eTime):
-      #if we dont have valid data, clean up, get out
-      print '\nreached end of data'
-      myPtr.close()
-      return None
-    #check that we're in the time window, and that we have a 
-    #match for the desired params
-    if(dfile['channel'] < 2): channel = 'a'
-    else: channel = alpha[dfile['channel']-1]
-    if(dt.datetime.utcfromtimestamp(dfile['time']) >= myPtr.sTime and \
-        dt.datetime.utcfromtimestamp(dfile['time']) <= myPtr.eTime and \
-        (myPtr.stid == None or myPtr.stid == dfile['stid']) and
-        (tmpchn == channel) and
-        (myPtr.cp == None or myPtr.cp == dfile['cp'])):
-      #fill the beamdata object
-      myBeam = beamData()
-      myBeam.updateValsFromDict(dfile)
-      myBeam.fit.updateValsFromDict(dfile)
-      myBeam.prm.updateValsFromDict(dfile)
-      myBeam.rawacf.updateValsFromDict(dfile)
-      myBeam.iqdat.updateValsFromDict(dfile)
-      myBeam.fType = myPtr.fType
-      myBeam.fPtr = myPtr
-      myBeam.offset = offset 
-      if(myPtr.fType == 'fitacf' or myPtr.fType == 'fitex' or myPtr.fType == 'lmfit'):
-        if(myBeam.fit.slist == None): 
-          myBeam.fit.slist = []
-      if(myBeam.prm.scan == 0 or firstflg):
-        myScan.append(myBeam)
-        firstflg = False
-      else:
-        myPtr.fBeam = myBeam
-        return myScan
+  return myPtr.readScan()
+ 
 def radDataCreateIndex(myPtr):
   """A function to index radar data into dict from a :class:`pydarn.sdio.radDataTypes.radDataPtr` object
   
@@ -585,7 +482,8 @@ def radDataCreateIndex(myPtr):
   Written by JDS 20140606
   """
   import pydarn, datetime as dt
-  indexDict={}
+  recordDict={}
+  scanStartDict={}
   starting_offset=pydarn.dmapio.getDmapOffset(myPtr.fd)
   #reset back to start of file
   pydarn.dmapio.setDmapOffset(myPtr.fd,0)
@@ -598,11 +496,13 @@ def radDataCreateIndex(myPtr):
       print '\nreached end of data'
       break
     rectime = dt.datetime.utcfromtimestamp(dfile['time'])
-    indexDict[rectime]=offset
+    recordDict[rectime]=offset
+    if dfile['scan']==1: scanStartDict[rectime]=offset
   #reset back to before building the index 
   pydarn.dmapio.setDmapOffset(myPtr.fd,starting_offset)
-  myPtr.indexDict=indexDict
-  return indexDict
+  myPtr.recordIndex=recordDict
+  myPtr.scanStartIndex=scanStartDict
+  return recordDict
 
 def radDataReadAll(myPtr):
   """A function to read a large amount (to the end of the request) of radar data into a list from a :class:`pydarn.sdio.radDataTypes.radDataPtr` object
