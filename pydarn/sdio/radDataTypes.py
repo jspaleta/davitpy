@@ -60,6 +60,7 @@ class radDataPtr():
     * **seek** 
     * **readRec** 
     * **readScan** 
+    * **readAll** 
     
   Written by AJ 20130108
   """
@@ -76,7 +77,15 @@ class radDataPtr():
     self.fd = None
     self.recordIndex = None
     self.scanStartIndex = None
+  def __iter__(self):
+    return self
 
+  def next(self):
+    beam=self.readRec()
+    if beam is None:
+      raise StopIteration
+    else:
+      return beam
   def open(self,filename):
     """open a dmap file by filename."""
     pass

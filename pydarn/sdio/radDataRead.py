@@ -524,66 +524,11 @@ def radDataReadAll(myPtr):
     
   Written by AJ 20130606
   """
-  from pydarn.sdio import radDataPtr, beamData, fitData, prmData, \
-    rawData, iqData, alpha, scanData
-  import pydarn, datetime as dt
+  from pydarn.sdio import radDataPtr
   
   #check input
-  if not isinstance(myPtr,radDataPtr):
+  assert(isinstance(myPtr,radDataPtr)),\
     'error, input must be of type radDataPtr'
-    return None
-  if myPtr.ptr == None:
-    print 'error, your pointer does not point to any data'
-    return None
-  if myPtr.ptr.closed:
-    print 'error, your file pointer is closed'
-    return None
-  
-  myScan = scanData()
-  if(myPtr.fBeam != None): 
-     myScan.append(myPtr.fBeam)
-     firstflg = False
-  else: firstflg = True
-  if(myPtr.channel == None): tmpchn = 'a'
-  else: tmpchn = myPtr.channel
-  
-  #do this until we reach the requested start time
-  #and have a parameter match
-  while(1):
-      #read the next record from the dmap file
-    offset=pydarn.dmapio.getDmapOffset(myPtr.fd)
-    dfile = pydarn.dmapio.readDmapRec(myPtr.fd)
-    #check for valid data
-    if(dfile == None or dt.datetime.utcfromtimestamp(dfile['time']) > myPtr.eTime):
-      #if we dont have valid data, clean up, get out
-      print '\nreached end of data'
-      myPtr.close()
-      return None
-    #check that we're in the time window, and that we have a 
-    #match for the desired params
-    if(dfile['channel'] < 2): channel = 'a'
-    else: channel = alpha[dfile['channel']-1]
-    if(dt.datetime.utcfromtimestamp(dfile['time']) >= myPtr.sTime and \
-        dt.datetime.utcfromtimestamp(dfile['time']) <= myPtr.eTime and \
-        (myPtr.stid == None or myPtr.stid == dfile['stid']) and
-        (tmpchn == channel) and
-        (myPtr.cp == None or myPtr.cp == dfile['cp'])):
-      #fill the beamdata object
-      myBeam = beamData()
-      myBeam.updateValsFromDict(dfile)
-      myBeam.fit.updateValsFromDict(dfile)
-      myBeam.prm.updateValsFromDict(dfile)
-      myBeam.rawacf.updateValsFromDict(dfile)
-      myBeam.iqdat.updateValsFromDict(dfile)
-      myBeam.fType = myPtr.fType
-      myBeam.fPtr = myPtr
-      myBeam.offset = offset 
-      if(myPtr.fType == 'fitacf' or myPtr.fType == 'fitex' or myPtr.fType == 'lmfit'):
-        if(myBeam.fit.slist == None): myBeam.fit.slist = []
-      if(myBeam.prm.scan == 0 or firstflg):
-        myScan.append(myBeam)
-        firstflg = False
-      else:
-        myPtr.fBeam = myBeam
-        return myScan
+  myList=[beam for beam in myPtr]
+  return myList
 
