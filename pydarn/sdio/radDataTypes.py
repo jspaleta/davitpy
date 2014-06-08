@@ -441,9 +441,9 @@ class radDataPtr():
       from pydarn.dmapio import getDmapOffset,readDmapRec,setDmapOffset
       recordDict={}
       scanStartDict={}
-      starting_offset=getDmapOffset(self.__fd)
-      #reset back to start of file
-      setDmapOffset(self.__fd,0)
+      starting_offset=self.offsetTell()
+      #rewind back to start of file
+      self.rewind()
       while(1):
           #read the next record from the dmap file
           offset= getDmapOffset(self.__fd)
@@ -456,7 +456,7 @@ class radDataPtr():
           recordDict[rectime]=offset
           if dfile['scan']==1: scanStartDict[rectime]=offset
       #reset back to before building the index 
-      setDmapOffset(self.__fd,starting_offset)
+      self.offsetSeek(starting_offset)
       self.recordIndex=recordDict
       self.scanStartIndex=scanStartDict
       return recordDict,scanStartDict
@@ -467,7 +467,13 @@ class radDataPtr():
       from pydarn.dmapio import setDmapOffset 
       return setDmapOffset(self.__fd,offset)
 
-  def reset(self):
+  def offsetTell(self):
+      """jump to dmap record at supplied byte offset. 
+      """
+      from pydarn.dmapio import getDmapOffset,setDmapOffset
+      return getDmapOffset(self.__fd)
+
+  def rewind(self):
       """jump to beginning of dmap file."""
       from pydarn.dmapio import setDmapOffset 
       return setDmapOffset(self.__fd,0)
