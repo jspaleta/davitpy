@@ -452,9 +452,12 @@ class radDataPtr():
               #if we dont have valid data, clean up, get out
               print '\nreached end of data'
               break
-          rectime = dt.datetime.utcfromtimestamp(dfile['time'])
-          recordDict[rectime]=offset
-          if dfile['scan']==1: scanStartDict[rectime]=offset
+          else:
+              if(dt.datetime.utcfromtimestamp(dfile['time']) >= self.sTime and \
+                dt.datetime.utcfromtimestamp(dfile['time']) <= self.eTime) : 
+                  rectime = dt.datetime.utcfromtimestamp(dfile['time'])
+                  recordDict[rectime]=offset
+                  if dfile['scan']==1: scanStartDict[rectime]=offset
       #reset back to before building the index 
       self.offsetSeek(starting_offset)
       self.recordIndex=recordDict
@@ -489,24 +492,25 @@ class radDataPtr():
     
       """
       from pydarn.sdio import scanData
+      #Save the radDataPtr's bmnum setting temporarily and set it to None
+      orig_beam=self.bmnum
+      self.bmnum=None
 
       if self.__ptr.closed:
           print 'error, your file pointer is closed'
           return None
-      if self.channel == None: tmpchn = 'a'
-      else: tmpchn = self.channel
 
       myScan = scanData()
-      if self.fBeam != None:
+      myBeam=self.readRec()
+      if(myBeam.prm.scan == 1):  
+        firstflg=True
+        myScan.append(myBeam)
+      else:
+        if self.fBeam != None:
           myScan.append(self.fBeam)
           firstflg = False
-      else:
+        else:
           firstflg = True
-      if self.channel == None: tmpchn = 'a'
-      else: tmpchn = self.channel
-      #Save the radDataPtr's bmnum setting temporarily and set it to None
-      orig_beam=self.bmnum
-      self.bmnum=None
 
       while(1):
         myBeam=self.readRec()
