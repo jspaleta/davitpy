@@ -208,8 +208,9 @@ class updateRadars(object):
         try: 
           self.sql_path=os.environ['DAVIT_TMPDIR']
         except:
-          self.sql_path = os.path.dirname( os.path.abspath( __file__ ) )
-        self.sql_file = 'radars.sqlite'
+          try:  self.sql_path=os.environ['HOME']
+          except: self.sql_path = os.path.dirname( os.path.abspath( __file__ ) )
+        self.sql_file = '.radars.sqlite'
         # MongoDB server
         self.db_name = 'radarInfo'
         try:

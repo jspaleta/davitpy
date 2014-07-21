@@ -37,11 +37,9 @@ except Exception as e:
 # Update local HDF5
 ####################################
 import os.path, time
-try: 
-  dirn=os.environ['DAVIT_TMPDIR']
-except:
-  dirn = os.path.abspath( __file__.split('__init__.py')[0] )
-filn = os.path.join(dirn, 'radars.sqlite')
+try:  dirn = os.environ['DAVIT_TMPDIR']
+except: dirn=os.environ['HOME']
+filn = os.path.join(dirn, '.radars.sqlite')
 ctime = time.time()
 # Update if not there or unreadable
 # Update if too old

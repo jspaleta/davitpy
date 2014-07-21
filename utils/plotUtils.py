@@ -81,6 +81,7 @@ class mapObj(basemap.Basemap):
     from pylab import text
     import math
     from copy import deepcopy
+    import datetime as dt
 
     self._coordsDict = {'mag': 'AACGM',
               'geo': 'Geographic',
@@ -89,6 +90,10 @@ class mapObj(basemap.Basemap):
     if coords is 'mlt':             
       print 'MLT coordinates not implemented yet.'
       return
+
+    if datetime is None:
+      datetime = dt.datetime.utcnow()
+    self.datetime = datetime
 
     # Add an extra member to the Basemap class
     if coords is not None and coords not in self._coordsDict:
@@ -103,7 +108,7 @@ class mapObj(basemap.Basemap):
     if lon_0 is None: 
       lon_0 = -100.
       if self.coords == 'mag': 
-        _, lon_0, _ = aacgm.aacgmConv(0., lon_0, 0., 0)
+        _, lon_0, _ = aacgm.aacgmConv(0., lon_0, 0., self.datetime.year, 0)
     if boundinglat:
       width = height = 2*111e3*( abs(lat_0 - boundinglat) )
 
@@ -134,8 +139,7 @@ class mapObj(basemap.Basemap):
         for ix,iy,ip in zip(x,y,parallels):
           if not self.xmin <= ix <= self.xmax: continue
           if not self.ymin <= iy <= self.ymax: continue
-          ipstr=r"%3.0f$^\circ$" % (ip)
-          _ = text(ix, iy, ipstr, 
+          _ = text(ix, iy, r"{:3.0f}$^\circ$".format(ip), 
               rotation=rotate_label, va='center', ha='center', zorder=10, color='.4')
       # label meridians on bottom and left
       meridians = np.arange(-180.,181.,20.)
@@ -166,11 +170,14 @@ class mapObj(basemap.Basemap):
           xt = np.array(x)
           yt = np.array(y)
           shape = xt.shape    
-          y, x, _ = aacgm.aacgmConvArr(list(yt.flatten()), list(xt.flatten()), [0.]*nx, flag)
+          y, x, _ = aacgm.aacgmConvArr(
+            list(yt.flatten()), list(xt.flatten()), [0.]*nx, 
+            self.datetime.year, flag)
           x = np.array(x).reshape(shape)
           y = np.array(y).reshape(shape)
         except TypeError as e:
-          y, x, _ = aacgm.aacgmConv(y, x, 0., flag)
+          y, x, _ = aacgm.aacgmConv(y, x, 0., 
+            self.datetime.year, flag)
 
 
     if self.coords is 'geo':
@@ -190,11 +197,14 @@ class mapObj(basemap.Basemap):
             x = np.array(x)
             y = np.array(y)
             shape = x.shape
-            yout, xout, _ = aacgm.aacgmConvArr(list(y.flatten()), list(x.flatten()), [0.]*nx, 0)
+            yout, xout, _ = aacgm.aacgmConvArr(
+              list(y.flatten()), list(x.flatten()), [0.]*nx, 
+              self.datetime.year, 0)
             xout = np.array(xout).reshape(shape)
             yout = np.array(yout).reshape(shape)
           except TypeError:
-            yout, xout, _ = aacgm.aacgmConv(y, x, 0., 0)
+            yout, xout, _ = aacgm.aacgmConv(y, x, 0., 
+              self.datetime.year, 0)
           return basemap.Basemap.__call__(self, xout, yout, inverse=inverse)
         else:
           return basemap.Basemap.__call__(self, x, y, inverse=inverse)
@@ -214,9 +224,10 @@ class mapObj(basemap.Basemap):
 
     if self.coords is 'mag':
       nPts = len(self._boundarypolyll.boundary[:, 0])
-      lats, lons, _ = aacgm.aacgmConvArr(list(self._boundarypolyll.boundary[:, 1]), 
+      lats, lons, _ = aacgm.aacgmConvArr(
+              list(self._boundarypolyll.boundary[:, 1]), 
               list(self._boundarypolyll.boundary[:, 0]), 
-              [0.]*nPts, 1)
+              [0.]*nPts, self.datetime.year, 1)
       b = np.asarray([lons,lats]).T
       oldgeom = deepcopy(self._boundarypolyll)
       newgeom = _geoslib.Polygon(b).fix()
@@ -377,21 +388,21 @@ def drawCB(fig,coll,cmap,norm,map=False,pos=[0,0,1,1]):
       for c in coll:
         c.set_cmap(cmap)
         c.set_norm(norm)
-        cb = plot.colorbar(c,cax=cax,drawedges=False)
+        cb = plot.colorbar(c,cax=cax,drawedges=True)
     else:
       coll.set_cmap(cmap)
       coll.set_norm(norm)
-      cb = plot.colorbar(coll,cax=cax,drawedges=False)
+      cb = plot.colorbar(coll,cax=cax,drawedges=True)
   else:
     if(isinstance(coll,list)):
       for c in coll:
         c.set_cmap(cmap)
         c.set_norm(norm)
-        cb = fig.colorbar(c,location='right',drawedges=False)
+        cb = fig.colorbar(c,location='right',drawedges=True)
     else:
       coll.set_cmap(cmap)
       coll.set_norm(norm)
-      cb = fig.colorbar(coll,location='right',pad="5%",drawedges=False)
+      cb = fig.colorbar(coll,location='right',pad="5%",drawedges=True)
   
   cb.ax.tick_params(axis='y',direction='out')
   return cb

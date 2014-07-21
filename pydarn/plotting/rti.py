@@ -334,33 +334,29 @@ def plotRti(sTime,rad,eTime=None,bmnum=7,fileType='fitex',params=['velocity','po
       ################################################################################
       
       cmap,norm,bounds = utils.plotUtils.genCmap(params[p],scales[p],colors=colors,lowGray=lowGray)
-      cmap=matplotlib.cm.jet
-      cmap.set_under('w',alpha=1.0)
-      cmap.set_over('w',alpha=1.0)
-      cmap.set_bad('w',alpha=1.0)
-      norm=matplotlib.colors.Normalize(vmin=scales[p][0],vmax=scales[p][1])
+      
       pcoll = ax.pcolormesh(X, Y, data[:tcnt][:].T, lw=0.01,edgecolors='None',alpha=1,lod=True,cmap=cmap,norm=norm)
   
       cb = utils.drawCB(rtiFig,pcoll,cmap,norm,map=0,pos=[pos[0]+pos[2]+.02, pos[1], 0.02, pos[3]])
       
-#      l = []
-#      #define the colorbar labels
-#      for i in range(0,len(bounds)):
-#        if(params[p] == 'phi0'):
-#          ln = 4
-#          if(bounds[i] == 0): ln = 3
-#          elif(bounds[i] < 0): ln = 5
-#          l.append(str(bounds[i])[:ln])
-#          continue
-#        if((i == 0 and params[p] == 'velocity') or i == len(bounds)-1):
-#          l.append(' ')
-#          continue
-#        l.append(str(int(bounds[i])))
-#      cb.ax.set_yticklabels(l)
-#        
-#      #set colorbar ticklabel size
-#      for t in cb.ax.get_yticklabels():
-#        t.set_fontsize(9)
+      l = []
+      #define the colorbar labels
+      for i in range(0,len(bounds)):
+        if(params[p] == 'phi0'):
+          ln = 4
+          if(bounds[i] == 0): ln = 3
+          elif(bounds[i] < 0): ln = 5
+          l.append(str(bounds[i])[:ln])
+          continue
+        if((i == 0 and params[p] == 'velocity') or i == len(bounds)-1):
+          l.append(' ')
+          continue
+        l.append(str(int(bounds[i])))
+      cb.ax.set_yticklabels(l)
+        
+      #set colorbar ticklabel size
+      for t in cb.ax.get_yticklabels():
+        t.set_fontsize(9)
       
       #set colorbar label
       if(params[p] == 'velocity'): cb.set_label('Velocity [m/s]',size=10)
@@ -459,8 +455,6 @@ def drawAxes(myFig,times,rad,cpid,bmnum,nrang,frang,rsep,bottom,yrng=-1,coords='
   #format the x axis
   ax.xaxis.set_minor_locator(matplotlib.dates.SecondLocator(interval=inter2))
   ax.xaxis.set_major_locator(matplotlib.dates.SecondLocator(interval=inter))
-  ax.xaxis.set_major_formatter(matplotlib.dates.DateFormatter('%H:%M'))
-  ax.xaxis.set_label_text('UT')
 
   
   # ax.xaxis.xticks(size=9)
