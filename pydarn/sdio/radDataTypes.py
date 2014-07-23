@@ -158,7 +158,7 @@ class radDataPtr():
             if(not os.path.isfile(fileName)):
                 print 'problem reading',fileName,':file does not exist'
                 return None
-            outname = tmpDir+str(int(datetimeToEpoch(dt.datetime.now())))
+            outname = tmpDir+str(int(utils.datetimeToEpoch(dt.datetime.now())))
             if(string.find(fileName,'.bz2') != -1):
                 outname = string.replace(fileName,'.bz2','')
                 print 'bunzip2 -c '+fileName+' > '+outname+'\n'
