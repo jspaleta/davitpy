@@ -417,6 +417,7 @@ def sdDataReadAll(myPtr):
   while(1):
 
     dfile = pydarn.dmapio.readDmapRec(myPtr.fd)
+    print "python tell:",myPtr.ptr.tell()
     #check for valid data
     try:
       dtime = dt.datetime(dfile['start.year'],dfile['start.month'],dfile['start.day'], \
