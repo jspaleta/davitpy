@@ -74,8 +74,6 @@ class radDataPtr():
     import datetime as dt
     import os,glob,string
     from pydarn.radar import network
-    import paramiko as p
-    import re
     from pydarn.sdio.fetchUtils import fetch_local_files, fetch_remote_files
 
     self.sTime = sTime
