@@ -60,3 +60,10 @@ try:
 	from dbUtils import *
 except Exception,e: 
 	print 'problem importing dbUtils: ', e
+
+try:
+       import fetchUtils
+       from fetchUtils import *
+except Exception,e: 
+       print 'problem importing fetchUtils: ', e
+

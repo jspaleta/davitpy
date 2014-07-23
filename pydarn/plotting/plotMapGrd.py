@@ -18,10 +18,12 @@ class MapConv(object):
     **Args**:
         * **startTime** (datetime.datetime): start date and time of the data rec
         * **mObj** (utils.plotUtils.mapObj): the map object you want data to be overlayed on.
-        * **axisHandle** : the axis handle used
+        * **axisHandle** : the axis handle used. Must be a subplot type (see example below).
         * **[hemi]** : hemisphere - 'north' or 'south'
         * **[maxVelScale]** : maximum velocity to be used for plotting, min is zero so scale is [0,1000]
         * **[plotCoords]** (str): coordinates of the plot, only use either 'mag' or 'mlt'
+        * **[fileName]** (str): special file name
+        * **[custType]** (str): file type of fileName
     **Example**:
         ::
 
@@ -45,12 +47,14 @@ class MapConv(object):
             mapDatObj.overlayHMB()
                     
     written by Bharat Kunduri and Sebastien de Larquier, 2013-08
+    modified my Matt Wessel 201309
     """
     import matplotlib.cm as cm
 
-    def __init__(self, startTime, mObj, 
-        axisHandle, hemi = 'north', 
-        maxVelScale = 1000., plotCoords = 'mag'):
+    def __init__(self, startTime, mObj, \
+        axisHandle, hemi = 'north', \
+        maxVelScale = 1000., plotCoords = 'mag', \
+        fileType=None,fileName=None,custType=None):
         import datetime
         from pydarn.sdio import *
         from pydarn.radar import *
@@ -66,6 +70,7 @@ class MapConv(object):
         self.maxVelPlot = maxVelScale
         self.axisHandle = axisHandle
         self.mObj = mObj
+        self.startTime = startTime
 
         #check if the mapObj is indicating the same hemisphere as data requested
         if hemi == "north" :
@@ -75,7 +80,9 @@ class MapConv(object):
 
         # check if hemi and coords keywords are correct
         assert(hemi == "north" or hemi == "south"),"error, hemi should either be 'north' or 'south'"
-        assert(plotCoords == 'mag' or coords == 'mlt'),"error, coords must be one of 'mag' or 'mlt'"
+        assert(plotCoords == 'mag' or plotCoords == 'mlt'),"error, plotCoords must be one of 'mag' or 'mlt'"
+        if fileName: assert(custType),"error, must specify custType for fileName"
+        if custType: assert(fileName),"error, must specify fileName for custType"
 
         self.hemi = hemi
         self.plotCoords = plotCoords
@@ -84,10 +91,24 @@ class MapConv(object):
         # This is the way I'm setting stuff up to avoid confusion of reading and plotting seperately.
         # Just give the date/hemi and the code reads the corresponding rec
         endTime = startTime + datetime.timedelta(minutes=2)
-        grdPtr = sdDataOpen(startTime, hemi, eTime=endTime)
-        self.grdData = sdDataReadRec(grdPtr)
-        mapPtr = sdDataOpen(startTime, hemi, eTime=endTime, fileType='mapex')
-        self.mapData = sdDataReadRec(mapPtr)
+        if not fileName:
+          if not fileType:
+            grdPtr = sdDataOpen(startTime, hemi, eTime=endTime)
+            self.grdData = sdDataReadRec(grdPtr)
+            mapPtr = sdDataOpen(startTime, hemi, eTime=endTime, fileType='mapex')
+            self.mapData = sdDataReadRec(mapPtr)
+          elif fileType == 'map':
+            mapPtr = sdDataOpen(startTime, hemi, eTime=endTime, fileType = fileType)
+            self.mapData = sdDataReadRec(mapPtr)
+            self.grdData = self.mapData.grid
+          else:
+            print "To use grdex and mapex together leave fileType unset. To use just map file, set fileType='map'"
+            return None
+        else:
+          mapPtr = sdDataOpen(startTime, hemi, eTime=endTime, fileType=fileType, fileName=fileName, custType=custType)
+          self.mapData = sdDataReadRec(mapPtr)
+          self.grdData=self.mapData.grid
+
 
     def overlayGridVel(self, pltColBar=True, 
         overlayRadNames=True, annotateTime=True, 
@@ -478,13 +499,13 @@ class MapConv(object):
             print 'LatShift is not zero, need to rewrite code for that, currently continuing assuming it is zero'
 
         # mlt conversion stuff
-        if self.plotCoords == 'mlt' :
-            epoch = timeUtils.datetimeToEpoch(strtTime)
-            mltDef = aacgm.mltFromEpoch(epoch,0.0) * 15.
-            lonShftFit += mltDef
-            gridArr[1,:] = numpy.mod( ( gridArr[1,:] + lonShftFit ) / 15., 24. )
-        else :
-            gridArr[1,:] = ( gridArr[1,:] + lonShftFit ) 
+        #if self.plotCoords == 'mlt' :
+            #epoch = timeUtils.datetimeToEpoch(self.startTime)
+            #mltDef = aacgm.mltFromEpoch(epoch,0.0) * 15.
+            #lonShftFit += mltDef
+            #gridArr[1,:] = numpy.mod( ( gridArr[1,:] + lonShftFit ) / 15., 24. )
+        #else :
+            #gridArr[1,:] = ( gridArr[1,:] + lonShftFit ) 
 
         latCntr = gridArr[0,:].reshape( ( 181, 60 ) )
         lonCntr = gridArr[1,:].reshape( ( 181, 60 ) )
@@ -603,8 +624,7 @@ class MapConv(object):
             cbar.set_label('Velocity [m/s]', size = colorBarLabelSize)
         # Check and annotate time
         if annotateTime :
-            self.axisHandle.annotate( dateStr, xy=(0.5, 1.), fontsize=12, 
-                ha="center", xycoords="axes fraction",
+            self.axisHandle.annotate( dateStr, xy=(0.5, 1.), fontsize=12, ha="center", xycoords="axes fraction",
                 bbox=dict(boxstyle='round,pad=0.2', fc="w", alpha=0.3) )
 
     def overlayMapFitVel(self, pltColBar=True, 
