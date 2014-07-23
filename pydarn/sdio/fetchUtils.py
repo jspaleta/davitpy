@@ -401,8 +401,8 @@ def fetch_remote_files(stime, etime, rad, ftype, method, remotesite,
         (rn, 'ERROR: password must be a string or Boolian')
     assert(isinstance(port, str) or port is None), \
         (rn, 'ERROR: port must be a string')
-    assert(isinstance(channel, str) and len(channel) == 1), \
-        (rn, 'ERROR: channel must be a one-character string')
+   # assert(isinstance(channel, str) and len(channel) == 1), \
+   #     (rn, 'ERROR: channel must be a one-character string')
     assert(isinstance(fnamefmt, (type(None),str,list))), \
         (rn, 'ERROR: fnamefmt must be None, str, or list')
     assert(isinstance(time_inc, dt.timedelta)), \
