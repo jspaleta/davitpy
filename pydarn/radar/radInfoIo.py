@@ -275,8 +275,8 @@ class updateRadars(object):
         from pymongo import MongoClient
         import sys
         #print self.db_user,self.db_pswd,self.db_host, self.db_name
-        uri="mongodb://%s:%s@%s/%s"  % (self.db_user, self.db_pswd, self.db_host, self.db_name)
-        print uri
+        uri='mongodb://{0}:{1}@{2}/{3}'.format(self.db_user, self.db_pswd, self.db_host, self.db_name)
+        #print uri
         try:
             conn = MongoClient(uri) 
             dba = conn[self.db_name]
