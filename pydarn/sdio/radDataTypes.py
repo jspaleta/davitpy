@@ -228,7 +228,7 @@ class radDataPtr():
                 time_inc = dt.timedelta(hours=2) 
 
                 #fetch the local files                
-                filelist = fetch_local_files(sTime, eTime, radcode, ftype, localdirfmt, outdir, \
+                filelist = fetch_local_files(sTime, eTime, ftype, localdirfmt, outdir, rad=radcode, \
                     channel=channel,time_inc=time_inc, fnamefmt=fnamefmt, verbose=verbose)
 
                 if(len(filelist) > 0):
@@ -264,8 +264,8 @@ class radDataPtr():
                 time_inc = dt.timedelta(hours=2) 
 
                 #Now fetch the files
-                filelist = fetch_remote_files(sTime, eTime, radcode, ftype, 'sftp', remotesite, \
-                       remotedirfmt, outdir, username=username, \
+                filelist = fetch_remote_files(sTime, eTime, ftype, 'sftp', remotesite, \
+                       remotedirfmt, outdir,rad=radcode, username=username, \
                        password=password, port=port, channel=channel, \
                        time_inc=time_inc, fnamefmt=fnamefmt, verbose=verbose)
 
